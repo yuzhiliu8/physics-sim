@@ -20,7 +20,6 @@ int main(){
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     GLFWwindow* window;
 
-
     window = glfwCreateWindow(800, 600, "Physics Engine", NULL, NULL);
     if (!window)
     {
@@ -49,6 +48,8 @@ int main(){
 
     }
 
+
+    int width = 700;
 
 
 
