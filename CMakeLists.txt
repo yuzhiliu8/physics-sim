@@ -4,9 +4,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 project(physics-engine)
 
 
+file(GLOB SRC_FILES "src/*.cpp" "src/*.c")
+
 add_executable(physics-engine
-    src/main.cpp
-    src/glad.c
+    ${SRC_FILES}
 )
 
 target_include_directories(physics-engine PUBLIC 
