@@ -1,30 +1,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "shader.hpp"
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
 #include <cmath>
 
-std::string read_file(const std::string& path){
-    std::ifstream file(path);
-    if (!file.is_open()){
-        throw std::runtime_error("file does not exist");
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-
-std::string vert_src = read_file("shaders/vertShader.vert");
-const char* vertexShaderSource = vert_src.c_str();
-
-std::string frag1_src = read_file("shaders/fragShader1.frag");
-const char* fragShaderSource1 = frag1_src.c_str();
-
-std::string frag2_src = read_file("shaders/fragShader2.frag");
-const char* fragShaderSource2 = frag2_src.c_str();
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     glViewport(0, 0, width, height);
@@ -62,48 +44,8 @@ int main(){
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    //Shaders and programs
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    int  success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-
-    if (!success){
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "Shader vertex compilation failed" << infoLog << "\n";
-    }
-
-    unsigned int fragShader1 = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragShader1, 1, &fragShaderSource1, NULL);
-    glCompileShader(fragShader1);
-
-    unsigned int fragShader2 = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragShader2, 1, &fragShaderSource2, NULL);
-    glCompileShader(fragShader2);
-
-    unsigned int shaderProgram1 = glCreateProgram();
-    glAttachShader(shaderProgram1, vertexShader);
-    glAttachShader(shaderProgram1, fragShader1);
-    glLinkProgram(shaderProgram1);
-
-    unsigned int shaderProgram2 = glCreateProgram();
-    glAttachShader(shaderProgram2, vertexShader);
-    glAttachShader(shaderProgram2, fragShader2);
-    glLinkProgram(shaderProgram2);
-
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragShader1);
-    glDeleteShader(fragShader2);
-
-    glGetProgramiv(shaderProgram2, GL_COMPILE_STATUS, &success);
-    if (!success){
-        glGetProgramInfoLog(shaderProgram2, 512, NULL, infoLog);
-        std::cout << "Shader Program compilated failed" << infoLog << "\n";
-    }
+    Shader shader1("shaders/vertShader.vs", "shaders/fragShader1.fs");
+    Shader shader2("shaders/vertShader.vs", "shaders/fragShader2.fs");
 
     //VAO, VBO, EBO, drawing
     float vertices1[] = {
@@ -115,8 +57,10 @@ int main(){
     float vertices2[] = {
         0.5f, 0.5f, 0.0f,  // top corner 2
         0.7f, 0.2f, 0.0f,    // right corner 2
-        0.3f, 0.2f, 0.0f,
+        -0.3f, -0.2f, 0.0f,
     };
+
+
 
     // For EBO drawing
     // unsigned int rect_indices[] = {
@@ -162,30 +106,27 @@ int main(){
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(rect_indices), rect_indices, GL_STATIC_DRAW);
 
-
-
-
-
-
-
-
-
     while(!glfwWindowShouldClose(window)){
         process_input(window);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram1);
+        // glUseProgram(shaderProgram1);
+        shader1.use();
         glBindVertexArray(VAO1);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
 
 
-        glUseProgram(shaderProgram2);
+        // glUseProgram(shaderProgram2);
+        shader2.use();
         float time = glfwGetTime();
-        float rgba_val = (0.5 * sin(time)) + 0.5;
-        int ourColorUniformLocation = glGetUniformLocation(shaderProgram2, "ourColor");
-        glUniform4f(ourColorUniformLocation, 0.0f, rgba_val, 0.0f, 1.0f);
+        float green = (0.5 * sin(time)) + 0.5;
+        float rgb_values[] = {0.0f, green, 0.0f, 1.0f};
+        shader2.setFloatVec("ourColor", 4, rgb_values);
+
+        float offset[] = {0.1f, 0.0f, 0.0f};
+        shader2.setFloatVec("offset", 3, offset);
 
 
         glBindVertexArray(VAO2);
