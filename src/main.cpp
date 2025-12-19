@@ -118,7 +118,6 @@ int main(){
 
 
 
-        // glUseProgram(shaderProgram2);
         shader2.use();
         float time = glfwGetTime();
         float green = (0.5 * sin(time)) + 0.5;
