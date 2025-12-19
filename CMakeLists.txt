@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-project(physics-engine)
+project(physics-sim)
 
 
 file(GLOB SRC_FILES "src/*.cpp" "src/*.c")
 
-add_executable(physics-engine
+add_executable(physics-sim
     ${SRC_FILES}
 )
 
-target_include_directories(physics-engine PUBLIC 
+target_include_directories(physics-sim PUBLIC 
     ${CMAKE_SOURCE_DIR}/include
 )
 

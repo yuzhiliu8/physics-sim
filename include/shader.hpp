@@ -14,12 +14,14 @@ class Shader{
         void use();
         void setFloat(const std::string& attribute, float value);
         void setFloatVec(const std::string& attribute, int size, float values[]);
+
+        ~Shader();
         
         
 
     
     private:
-        unsigned int program_ID;
+        unsigned int program_id_;
         
 
 

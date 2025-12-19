@@ -16,29 +16,29 @@ Shader::Shader(const std::string& vertex_path, const std::string& fragment_path)
     const char* vsrc = vertex_source.c_str();
     const char* fsrc = fragment_source.c_str();
 
-    int vertex_shader_ID = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader_ID, 1, &vsrc, NULL);
-    glCompileShader(vertex_shader_ID);
+    int vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader_id, 1, &vsrc, NULL);
+    glCompileShader(vertex_shader_id);
 
-    int fragment_shader_ID = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader_ID, 1, &fsrc, NULL);
-    glCompileShader(fragment_shader_ID);
+    int fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader_id, 1, &fsrc, NULL);
+    glCompileShader(fragment_shader_id);
 
-    program_ID = glCreateProgram();
-    glAttachShader(program_ID, vertex_shader_ID);
-    glAttachShader(program_ID, fragment_shader_ID);
-    glLinkProgram(program_ID);
+    program_id_ = glCreateProgram();
+    glAttachShader(program_id_, vertex_shader_id);
+    glAttachShader(program_id_, fragment_shader_id);
+    glLinkProgram(program_id_);
 
-    glDeleteShader(vertex_shader_ID);
-    glDeleteShader(fragment_shader_ID);
+    glDeleteShader(vertex_shader_id);
+    glDeleteShader(fragment_shader_id);
 }
 
 void Shader::use(){
-    glUseProgram(program_ID);
+    glUseProgram(program_id_);
 }
 
 void Shader::setFloat(const std::string& attribute, float value){
-    int loc = glGetUniformLocation(program_ID, attribute.c_str());
+    int loc = glGetUniformLocation(program_id_, attribute.c_str());
     glUniform1f(loc, value);
 }
 
@@ -47,7 +47,7 @@ void Shader::setFloatVec(const std::string& attribute, int size, float values[])
         throw std::runtime_error("This size vector is not permitted in shader");
     }
 
-    int loc = glGetUniformLocation(program_ID, attribute.c_str());
+    int loc = glGetUniformLocation(program_id_, attribute.c_str());
     if (size == 2){
         glUniform2f(loc, values[0], values[1]);
     } else if (size == 3){
@@ -57,3 +57,6 @@ void Shader::setFloatVec(const std::string& attribute, int size, float values[])
     }
 }
 
+Shader::~Shader(){
+    glDeleteProgram(program_id_);
+}

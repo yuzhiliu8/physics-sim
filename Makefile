@@ -6,7 +6,7 @@ build:
 	cmake --build build -j$$(nproc)
 
 run: build
-	./build/physics-engine
+	./build/physics-sim
 
 clean:
 	rm -rf build
