@@ -8,6 +8,7 @@
 #include <cmath>
 #include "shader.hpp"
 #include "circle.hpp"
+#include <iostream>
 
 
 
@@ -16,13 +17,17 @@ class PhysicsSim
     public:
         PhysicsSim(int width, int height);
         void initialize();
+        void add_obj(std::shared_ptr<Circle> c);
         void start();
-
 
     private:
         GLFWwindow* window_;
         int width_;
         int height_;
+        std::vector<std::shared_ptr<Circle>> objs_;
+
+        void render();
+        void update_physics();
         
 
 

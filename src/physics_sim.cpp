@@ -20,9 +20,6 @@ void PhysicsSim::initialize(){
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-}
-
-void PhysicsSim::start(){
     window_ = glfwCreateWindow(width_, height_, "Physics Engine", NULL, NULL);
     if (!window_)
     {
@@ -39,9 +36,9 @@ void PhysicsSim::start(){
 
     glViewport(0, 0, width_, height_);
     glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
-    Shader shader1("shaders/vertShader.vs", "shaders/fragShader1.fs");
-    Shader shader2("shaders/vertShader.vs", "shaders/fragShader2.fs");
+}
 
+void PhysicsSim::start(){
     //VAO, VBO, EBO, drawing
     float vertices1[] = {
         -0.7f, -0.7f, 0.0f, 1.0f, 0.0f, 0.0f,
@@ -55,19 +52,14 @@ void PhysicsSim::start(){
         -0.3f, -0.2f, 0.0f,
     };
 
-
-
     // For EBO drawing
     // unsigned int rect_indices[] = {
     //     0, 1, 2,
     //     1, 2, 3
     // };
-
-    
     // TRIANGLE 1
     unsigned int VAO1;
     
-
     glGenVertexArrays(1, &VAO1);
     glBindVertexArray(VAO1);
     unsigned int VBO1;
@@ -77,7 +69,6 @@ void PhysicsSim::start(){
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
 
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
@@ -106,51 +97,52 @@ void PhysicsSim::start(){
     // Circle c1(shader2, 0.5, 0.5);
     // Circle c2(shader2, 0.0, 0.0, 0.0, 0.1);
 
-    std::vector<Circle> circles;
-    circles.emplace_back(shader2, 0.5, 0.5);
-    circles.emplace_back(shader2, 0.0, 0.0, 0.0, 0.1);
-
 
     int i = 0;
+    double last_time = glfwGetTime();
+    double accumulator = 0.0;
     while(!glfwWindowShouldClose(window_)){
         process_input(window_);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // glUseProgram(shaderProgram1);
-        // shader1.use();
-        // glBindVertexArray(VAO1);
-        // glDrawArrays(GL_TRIANGLES, 0, 3);
+        double now = glfwGetTime();
+        double frame_time = now - last_time;
+        last_time = now;
 
-        // shader2.use();
-        // float time = glfwGetTime();
-        // float green = (0.5 * sin(time)) + 0.5;
-        // float rgb_values[] = {0.0f, green, 0.0f, 1.0f};
-        // shader2.setFloatVec("ourColor", 4, rgb_values);
-
-        // float offset[] = {0.01f * i, 0.01f * i, 0.1f};
-        // i++;
-        // shader2.setFloatVec("offset", 3, offset);
-
-
-        // glBindVertexArray(VAO2);
-        // glDrawArrays(GL_TRIANGLES, 0, 3);
-
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        for (size_t i = 0; i < circles.size(); i++){
-            circles[i].render();
+        accumulator += frame_time;
+        while(accumulator >= phys::dt){
+            update_physics();
+            accumulator -= phys::dt;
         }
-
-
+        render();
         glfwSwapBuffers(window_);
         glfwPollEvents();
-
     }
-        
     glfwTerminate();
-
 }
 
+void PhysicsSim::add_obj(std::shared_ptr<Circle> c){
+    objs_.push_back(c); 
+}
 
+void PhysicsSim::render(){
+    for (std::shared_ptr<Circle> &c : objs_){
+        c->render();
+        // std::cout << c->get_velocity().y << "\n";
+    }
+}
 
-
+void PhysicsSim::update_physics(){
+    for (std::shared_ptr<Circle> &c : objs_){
+        c->update_pos();
+        glm::vec3 pos = c->get_pos();
+        glm::vec3 v = c->get_velocity();
+        if (pos.y - c->radius() <= -1){
+            pos.y = -1.0 + c->radius();
+            c->set_pos(pos.x, pos.y, pos.z);
+            c->set_velocity(v.x, -v.y, v.z);
+        }
+        std::cout << "X: " << pos.x << " Y: " << pos.y << " Z: " << pos.z << "\n";
+    }
+}

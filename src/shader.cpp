@@ -57,6 +57,11 @@ void Shader::setFloatVec(const std::string& attribute, int size, float values[])
     }
 }
 
+void Shader::setMat4(const std::string& attribute, const glm::mat4& mat){
+    unsigned int loc = glGetUniformLocation(program_id_, attribute.c_str());
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mat));
+}
+
 Shader::~Shader(){
     glDeleteProgram(program_id_);
 }

@@ -6,19 +6,23 @@
 #include <vector>
 #include <cmath>
 #include <numbers>
-
-struct Point
-{
-    float x;
-    float y;
-    float z;
-};
-
+#include "utils.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 class Circle{
     public:
-        Circle(Shader &shader, float x, float y, float z=0.0, float radius=0.2);
+        Circle(std::shared_ptr<Shader> shader, float x, float y, float z=0.0, float radius=0.2);
+        void update_pos();
         void render();
+        void set_pos(float x, float y, float z);
+        void set_velocity(float x, float y, float z);
+        void set_acceleration(float x, float y, float z);
+        float radius();
+        glm::vec3 get_pos();
+        glm::vec3 get_velocity();
+        glm::vec3 get_acceleration();
 
 
     private:
@@ -30,12 +34,7 @@ class Circle{
         unsigned int VAO;
         unsigned int VBO;
 
-        void draw_vertices();
-
-        
-
-
-
+        void draw_static_vertices();
 };
 
 #endif
