@@ -38,16 +38,26 @@ void Shader::use(){
 }
 
 void Shader::setFloat(const std::string& attribute, float value){
+    use();
     int loc = glGetUniformLocation(program_id_, attribute.c_str());
+    if(loc == -1) {
+            throw std::runtime_error("Warning: uniform " + attribute + " not found in shader.\n");
+            return;
+    }
     glUniform1f(loc, value);
 }
 
 void Shader::setFloatVec(const std::string& attribute, int size, float values[]){
+    use();
     if (size != 2 && size != 3 && size != 4){
         throw std::runtime_error("This size vector is not permitted in shader");
     }
 
     int loc = glGetUniformLocation(program_id_, attribute.c_str());
+    if(loc == -1) {
+            throw std::runtime_error("Warning: uniform " + attribute + " not found in shader.\n");
+            return;
+    }
     if (size == 2){
         glUniform2f(loc, values[0], values[1]);
     } else if (size == 3){
@@ -58,7 +68,12 @@ void Shader::setFloatVec(const std::string& attribute, int size, float values[])
 }
 
 void Shader::setMat4(const std::string& attribute, const glm::mat4& mat){
+    use();
     unsigned int loc = glGetUniformLocation(program_id_, attribute.c_str());
+    if(loc == -1) {
+            throw std::runtime_error("Warning: uniform " + attribute + " not found in shader.\n");
+            return;
+    }
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mat));
 }
 

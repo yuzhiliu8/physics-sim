@@ -2,8 +2,7 @@
 
 const int Circle::RESOLUTION = 100;
 
-Circle::Circle(std::shared_ptr<Shader> shader, float x, float y, float z, float radius){
-    shader_ = shader;
+Circle::Circle(float x, float y, float z, float radius){
     center_.pos = glm::vec3(x, y, z);
     center_.last_pos = glm::vec3(x, y, z);
     radius_ = radius;
@@ -65,18 +64,17 @@ void Circle::update_pos(){
     center_.pos = new_pos;
 }
 
-void Circle::render(){
-    shader_->use();
-    glm::mat4 transform = glm::mat4(1.0f);
-    transform = glm::translate(transform, center_.pos);
-    shader_->setMat4("transform", transform);
-
+void Circle::render(std::shared_ptr<Shader> shader){
+    shader->use();
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, center_.pos);
+    shader->setMat4("model", model);
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, vertices_.size() / 3);
 }
 
 void Circle::set_pos(float x, float y, float z){
-    glm::vec3 preserved = get_velocity();
+    glm::vec3 preserved = velocity();
     center_.pos.x = x;
     center_.pos.y = y;
     center_.pos.z = z;
@@ -102,18 +100,18 @@ float Circle::radius(){
     return radius_;
 }
 
-glm::vec3 Circle::get_pos(){
+glm::vec3 Circle::pos(){
     return center_.pos;
 }
 
-glm::vec3 Circle::get_velocity(){
+glm::vec3 Circle::velocity(){
     return glm::vec3(
         (center_.pos.x - center_.last_pos.x) / phys::dt,
         (center_.pos.y - center_.last_pos.y) / phys::dt,
         (center_.pos.z - center_.last_pos.z) / phys::dt
     );
 }
-glm::vec3 Circle::get_acceleration(){ return center_.acceleration; }
+glm::vec3 Circle::acceleration(){ return center_.acceleration; }
 
 
 

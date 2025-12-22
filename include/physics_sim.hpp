@@ -9,6 +9,9 @@
 #include "shader.hpp"
 #include "circle.hpp"
 #include <iostream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 
 
@@ -17,6 +20,7 @@ class PhysicsSim
     public:
         PhysicsSim(int width, int height);
         void initialize();
+        void set_shader(std::shared_ptr<Shader> shader);
         void add_obj(std::shared_ptr<Circle> c);
         void start();
 
@@ -25,6 +29,7 @@ class PhysicsSim
         int width_;
         int height_;
         std::vector<std::shared_ptr<Circle>> objs_;
+        std::shared_ptr<Shader> shader_;
 
         void render();
         void update_physics();
