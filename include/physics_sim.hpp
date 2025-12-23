@@ -34,6 +34,7 @@ class PhysicsSim
         const float CAM_SPEED = 0.5;
         float last_mouse_x;
         float last_mouse_y;
+        bool first_mouse = true;
 
         void render();
         void update_physics();

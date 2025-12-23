@@ -128,6 +128,12 @@ void PhysicsSim::framebuffer_size_callback(GLFWwindow* window, int width, int he
 
 void PhysicsSim::mouse_callback(GLFWwindow* window, double xpos, double ypos){
     PhysicsSim* app = static_cast<PhysicsSim*>(glfwGetWindowUserPointer(window));
+    if (app->first_mouse)
+        {
+            app->last_mouse_x = xpos;
+            app->last_mouse_y = ypos;
+            app->first_mouse = false;
+        }
     float x_offset = xpos - app->last_mouse_x;
     float y_offset = ypos - app->last_mouse_y;
     app->last_mouse_x = xpos;
