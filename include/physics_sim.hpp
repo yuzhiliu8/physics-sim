@@ -12,8 +12,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-
+#include "camera.hpp"
 
 class PhysicsSim
 {
@@ -31,11 +30,16 @@ class PhysicsSim
         std::vector<std::shared_ptr<Circle>> objs_;
         std::shared_ptr<Shader> shader_;
 
+        Camera camera_;
+        const float CAM_SPEED = 0.5;
+        float last_mouse_x;
+        float last_mouse_y;
+
         void render();
         void update_physics();
-        
-
-
+        void process_input(float frame_time);
+        static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+        static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 };
 
 #endif
