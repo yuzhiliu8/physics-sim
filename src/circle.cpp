@@ -113,6 +113,11 @@ glm::vec3 Circle::velocity(){
 }
 glm::vec3 Circle::acceleration(){ return center_.acceleration; }
 
+Circle::~Circle(){
+    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &VAO);
+}
+
 
 
 

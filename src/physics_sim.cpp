@@ -66,7 +66,6 @@ void PhysicsSim::start(){
         glfwSwapBuffers(window_);
         glfwPollEvents();
     }
-    glfwTerminate();
 }
 
 void PhysicsSim::add_obj(std::shared_ptr<Circle> c){
@@ -76,7 +75,7 @@ void PhysicsSim::add_obj(std::shared_ptr<Circle> c){
 void PhysicsSim::render(){
     for (std::shared_ptr<Circle> &c : objs_){
         c->render(shader_);
-        std::cout << c->velocity().y << "\n";
+        // std::cout << c->velocity().y << "\n";
     }
 }
 
@@ -90,7 +89,7 @@ void PhysicsSim::update_physics(){
             c->set_pos(pos.x, pos.y, pos.z);
             c->set_velocity(v.x, -v.y, v.z);
         }
-        std::cout << "X: " << pos.x << " Y: " << pos.y << " Z: " << pos.z << "\n";
+        // std::cout << "X: " << pos.x << " Y: " << pos.y << " Z: " << pos.z << "\n";
     }
 }
 
@@ -140,4 +139,14 @@ void PhysicsSim::mouse_callback(GLFWwindow* window, double xpos, double ypos){
     app->last_mouse_y = ypos;
     app->camera_.acc_yaw(x_offset);
     app->camera_.acc_pitch(-y_offset);
+}
+
+PhysicsSim::~PhysicsSim(){
+    std::cout << "Terminating Physics Sim" << "\n";
+    if(window_){
+        glfwSetWindowUserPointer(window_, nullptr);
+        glfwDestroyWindow(window_);
+        window_ = nullptr;
+    }
+    glfwTerminate();
 }

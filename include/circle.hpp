@@ -23,6 +23,7 @@ class Circle{
         glm::vec3 pos();
         glm::vec3 velocity();
         glm::vec3 acceleration();
+        ~Circle();
 
     private:
         static const int RESOLUTION;

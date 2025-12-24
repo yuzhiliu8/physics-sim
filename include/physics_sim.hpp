@@ -22,6 +22,7 @@ class PhysicsSim
         void set_shader(std::shared_ptr<Shader> shader);
         void add_obj(std::shared_ptr<Circle> c);
         void start();
+        ~PhysicsSim();
 
     private:
         GLFWwindow* window_;
