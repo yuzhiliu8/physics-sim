@@ -20,7 +20,7 @@ glm::mat4 Camera::view(){
 }
 
 glm::mat4 Camera::projection(){
-    return glm::perspective(glm::radians(fov_), aspect_ratio_, 0.1f, 100.0f);
+    return glm::perspective(glm::radians(fov_), aspect_ratio_, 0.1f, 10000.0f);
 }
 
 void Camera::update_front(){
