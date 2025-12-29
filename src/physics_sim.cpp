@@ -6,11 +6,19 @@ PhysicsSim::PhysicsSim(int width, int height)
     camera_(glm::vec3(0.0, 0.0, 3.0), (float)width_ / (float)height_)
 {}
 
+PhysicsSim::PhysicsSim(int width, int height, glm::vec3 cam_pos)
+    : width_(width), 
+    height_(height),
+    camera_(cam_pos, (float)width_ / (float)height_)
+{}
+
 void PhysicsSim::initialize(){
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_DEPTH_BITS, 24);  // 24-bit depth buffer
+
     window_ = glfwCreateWindow(width_, height_, "Physics Engine", NULL, NULL);
     if (!window_)
     {
@@ -30,12 +38,79 @@ void PhysicsSim::initialize(){
     glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(window_, this);
     glfwSetCursorPosCallback(window_, mouse_callback);  
+    glEnable(GL_DEPTH_TEST);
+
     last_mouse_x = width_/2;
     last_mouse_y = height_/2;
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+    // glBindVertexArray(VAO);
+
 }
+
+
 
 void PhysicsSim::set_shader(std::shared_ptr<Shader> shader){
     shader_ = shader;
+}
+
+/* 8 vertices
+0,4      1,5
+    (0,0)
+2,6      3,7
+
+*/
+void PhysicsSim::set_bounding_box(float width, float height){
+    vertices_.clear();
+    vertices_.reserve(8 * 3);
+    
+    
+    add_triple(vertices_, -width/2, 0.0f, width/2); //0
+    add_triple(vertices_, width/2, 0.0f, width/2);  //1
+    add_triple(vertices_, -width/2, 0.0f, -width/2); //2
+    add_triple(vertices_, width/2, 0.0f, -width/2); //3
+
+    add_triple(vertices_, -width/2, height, width/2); //4
+    add_triple(vertices_, width/2, height, width/2);  //5
+    add_triple(vertices_, -width/2, height, -width/2); //6
+    add_triple(vertices_, width/2, height, -width/2); //7
+
+    indices_.clear();
+    indices_.reserve(24);
+    indices_.push_back(0); //bottom face
+    indices_.push_back(1);
+    indices_.push_back(2);
+
+    indices_.push_back(1);
+    indices_.push_back(2);
+    indices_.push_back(3);
+    add_pair(indices_, 0, 4); //connecting edges
+    add_pair(indices_, 1, 5);
+    add_pair(indices_, 2, 6);
+    add_pair(indices_, 3, 7);
+    add_pair(indices_, 4, 5); //top face
+    add_pair(indices_, 4, 6);
+    add_pair(indices_, 6, 7);
+    add_pair(indices_, 5, 7);
+
+
+    bounding_box_ = true;
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(float), vertices_.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(unsigned int), indices_.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0); 
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);  //unbind
+    glBindVertexArray(0);
 }
 
 void PhysicsSim::start(){
@@ -46,50 +121,63 @@ void PhysicsSim::start(){
     int i = 0;
     double last_time = glfwGetTime();
     double accumulator = 0.0;
+
     while(!glfwWindowShouldClose(window_)){
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         
         double now = glfwGetTime();
         double frame_time = now - last_time;
         last_time = now;
         process_input(frame_time);
 
-        accumulator += frame_time;
-        while(accumulator >= phys::dt){
-            update_physics();
-            accumulator -= phys::dt;
-        }
         shader_->setMat4("view", camera_.view());
         shader_->setMat4("projection", camera_.projection());
+        if (sim_started_){
+            accumulator += frame_time;
+            time_elapsed_ += frame_time;
+            while(accumulator >= phys::dt){
+                update_physics();
+                accumulator -= phys::dt;
+            }
+            std::cout << "TIME ELAPSED: " << time_elapsed_ << "\n";
+        }
         render();
         glfwSwapBuffers(window_);
         glfwPollEvents();
     }
 }
 
-void PhysicsSim::add_obj(std::shared_ptr<Circle> c){
+void PhysicsSim::add_obj(std::shared_ptr<RigidBody> c){
     objs_.push_back(c); 
 }
 
 void PhysicsSim::render(){
-    for (std::shared_ptr<Circle> &c : objs_){
+    if (bounding_box_){ //render bounding box
+        shader_->setMat4("model", glm::mat4(1.0f));
+        shader_->setFloatVec("ourColor", 4, color::green);
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_LINES, indices_.size()-6 , GL_UNSIGNED_INT, (void*) (6 * sizeof(unsigned int)));
+    }
+    for (std::shared_ptr<RigidBody> &c : objs_){
         c->render(shader_);
         // std::cout << c->velocity().y << "\n";
     }
 }
 
 void PhysicsSim::update_physics(){
-    for (std::shared_ptr<Circle> &c : objs_){
-        c->update_pos();
-        glm::vec3 pos = c->pos();
-        glm::vec3 v = c->velocity();
-        if (pos.y - c->radius() <= -1){
-            pos.y = -1.0 + c->radius();
-            c->set_pos(pos.x, pos.y, pos.z);
-            c->set_velocity(v.x, -v.y, v.z);
+    for (std::shared_ptr<RigidBody> &b : objs_){
+        b->update_pos();
+        glm::vec3 pos = b->pos();
+        glm::vec3 v = b->velocity();
+        if (pos.y - b->collision_radius() <= 0.0f){
+            pos.y = b->collision_radius();
+            b->set_pos(glm::vec3(pos.x, pos.y, pos.z));
+            b->set_velocity(glm::vec3(v.x, -0.75f * v.y, v.z));
         }
-        // std::cout << "X: " << pos.x << " Y: " << pos.y << " Z: " << pos.z << "\n";
+        std::cout << "X: " << pos.x << " Y: " << pos.y << " Z: " << pos.z << "\n";
     }
 }
 
@@ -114,6 +202,9 @@ void PhysicsSim::process_input(float frame_time){
     }
     if(glfwGetKey(window_, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
         camera_.down(CAM_SPEED * frame_time);
+    }
+    if(glfwGetKey(window_, GLFW_KEY_ENTER) == GLFW_PRESS && !sim_started_){
+        sim_started_ = !sim_started_;
     }
 }
 
@@ -143,6 +234,11 @@ void PhysicsSim::mouse_callback(GLFWwindow* window, double xpos, double ypos){
 
 PhysicsSim::~PhysicsSim(){
     std::cout << "Terminating Physics Sim" << "\n";
+    objs_.clear();
+    shader_ = nullptr;
+    if (VAO != 0) glDeleteVertexArrays(1, &VAO);
+    if (VBO != 0) glDeleteBuffers(1, &VBO);
+    if (EBO != 0) glDeleteBuffers(1, &EBO);
     if(window_){
         glfwSetWindowUserPointer(window_, nullptr);
         glfwDestroyWindow(window_);
