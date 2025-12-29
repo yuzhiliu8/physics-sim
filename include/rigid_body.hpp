@@ -11,6 +11,7 @@
 class RigidBody {
     public:
         virtual void render(std::shared_ptr<Shader> shader) = 0;
+        virtual float collision_radius() = 0;
         void update_pos();
         void set_pos(const glm::vec3& pos);
         void set_velocity(const glm::vec3& velocity);
@@ -27,7 +28,5 @@ class RigidBody {
         glm::vec3 last_pos_;
         glm::vec3 acceleration_;
 
-        unsigned int VBO;
-        unsigned int VAO;
 };
 #endif
