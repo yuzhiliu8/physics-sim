@@ -4,9 +4,10 @@
 #include <glm/glm.hpp>
 
 namespace phys{
-    inline constexpr double dt = 1.0 / 60.0;
-    inline constexpr double dt2 = dt * dt;
-    inline constexpr double GRAVITY = 9.81;
+    inline constexpr float dt{ 1.0 / 60.0 };
+    inline constexpr float dt2{ dt * dt };
+    inline constexpr float GRAVITY{ 9.81 };
+    inline constexpr float restitution{ 0.9 };
 }
 
 namespace color {

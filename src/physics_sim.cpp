@@ -62,30 +62,38 @@ void PhysicsSim::set_shader(std::shared_ptr<Shader> shader){
 2,6      3,7
 
 */
-void PhysicsSim::set_bounding_box(float width, float height){
+void PhysicsSim::set_bounding_box(
+    float front, float back,  //pos Z, neg Z
+    float right, float left, 
+    float top, float bottom){
+
+    if (front <= back || right <= left || top <= bottom){
+        throw std::runtime_error("Bounding Box coordinate errors");
+    }
+
     vertices_.clear();
     vertices_.reserve(8 * 3);
     
     
-    add_triple(vertices_, -width/2, 0.0f, width/2); //0
-    add_triple(vertices_, width/2, 0.0f, width/2);  //1
-    add_triple(vertices_, -width/2, 0.0f, -width/2); //2
-    add_triple(vertices_, width/2, 0.0f, -width/2); //3
+    add_triple(vertices_, left, bottom, back);  //0
+    add_triple(vertices_, right, bottom, back); //1
+    add_triple(vertices_, left, bottom, front); //2
+    add_triple(vertices_, right, bottom, front);//3
+    add_triple(vertices_, left, top, back);     //4
+    add_triple(vertices_, right, top, back);    //5
+    add_triple(vertices_, left, top, front);    //6
+    add_triple(vertices_, right, top, front);   //7
 
-    add_triple(vertices_, -width/2, height, width/2); //4
-    add_triple(vertices_, width/2, height, width/2);  //5
-    add_triple(vertices_, -width/2, height, -width/2); //6
-    add_triple(vertices_, width/2, height, -width/2); //7
 
     indices_.clear();
     indices_.reserve(24);
     indices_.push_back(0); //bottom face
     indices_.push_back(1);
     indices_.push_back(2);
-
     indices_.push_back(1);
     indices_.push_back(2);
     indices_.push_back(3);
+    
     add_pair(indices_, 0, 4); //connecting edges
     add_pair(indices_, 1, 5);
     add_pair(indices_, 2, 6);
@@ -95,22 +103,23 @@ void PhysicsSim::set_bounding_box(float width, float height){
     add_pair(indices_, 6, 7);
     add_pair(indices_, 5, 7);
 
-
-    bounding_box_ = true;
-
     glBindVertexArray(VAO);
-
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(float), vertices_.data(), GL_STATIC_DRAW);
-
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(unsigned int), indices_.data(), GL_STATIC_DRAW);
-
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0); 
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);  //unbind
     glBindVertexArray(0);
+
+    has_bounding_box_ = true;
+    bounding_box_.front = front;
+    bounding_box_.back = back;
+    bounding_box_.right = right;
+    bounding_box_.left = left;
+    bounding_box_.top = top;
+    bounding_box_.bottom = bottom;
 }
 
 void PhysicsSim::start(){
@@ -154,7 +163,7 @@ void PhysicsSim::add_obj(std::shared_ptr<RigidBody> c){
 }
 
 void PhysicsSim::render(){
-    if (bounding_box_){ //render bounding box
+    if (has_bounding_box_){ //render bounding box
         shader_->setMat4("model", glm::mat4(1.0f));
         shader_->setFloatVec("ourColor", 4, color::green);
         glBindVertexArray(VAO);
@@ -170,13 +179,52 @@ void PhysicsSim::render(){
 void PhysicsSim::update_physics(){
     for (std::shared_ptr<RigidBody> &b : objs_){
         b->update_pos();
-        glm::vec3 pos = b->pos();
+        glm::vec3 pos = b->pos(); //copy to pos, can modify pos
         glm::vec3 v = b->velocity();
-        if (pos.y - b->collision_radius() <= 0.0f){
-            pos.y = b->collision_radius();
-            b->set_pos(glm::vec3(pos.x, pos.y, pos.z));
-            b->set_velocity(glm::vec3(v.x, -0.75f * v.y, v.z));
+
+        if (has_bounding_box_){ //bounding box collision checks, assumes obj is smaller than bounding box
+            float rad{ b->collision_radius() };
+            bool collided{ false };
+            if (pos.y - rad <= bounding_box_.bottom){
+                collided = true;
+                pos.y = bounding_box_.bottom + rad;
+                v.y = -phys::restitution * v.y;
+            } else if (pos.y + rad >= bounding_box_.top){
+                collided = true;
+                pos.y = bounding_box_.top - rad;
+                v.y = -phys::restitution * v.y;
+            }
+
+            if (pos.x + rad >= bounding_box_.right){
+                collided = true;
+                pos.x = bounding_box_.right - rad;
+                v.x = -phys::restitution * v.x;
+            } else if (pos.x - rad <= bounding_box_.left){
+                collided = true;
+                pos.x = bounding_box_.left + rad;
+                v.x = -phys::restitution * v.x;
+            }
+
+            if (pos.z - rad <= bounding_box_.back){
+                collided = true;
+                pos.z = bounding_box_.back + rad;
+                v.z = -phys::restitution * v.z;
+            } else if (pos.z + rad >= bounding_box_.front){
+                collided = true;
+                pos.z = bounding_box_.front - rad;
+                v.z = -phys::restitution * v.z;
+            }
+
+            if (collided){
+                b->set_pos(pos);
+                b->set_velocity(v);
+            }
         }
+        // if (pos.y - b->collision_radius() <= 0.0f){
+        //     pos.y = b->collision_radius();
+        //     b->set_pos(glm::vec3(pos.x, pos.y, pos.z));
+        //     b->set_velocity(glm::vec3(v.x, -0.75f * v.y, v.z));
+        // }
         std::cout << "X: " << pos.x << " Y: " << pos.y << " Z: " << pos.z << "\n";
     }
 }

@@ -31,8 +31,20 @@ class PhysicsSim
         Y: [0, height]
         Z: [-base/2, base/2]
         */ 
-        void set_bounding_box(float width, float height);
+        void set_bounding_box(
+            float front = 25.0f, float back = -25.0f, 
+            float right = 25.0f, float left = -25.0f, 
+            float top = 50.0f, float bottom = 0.0f);
         ~PhysicsSim();
+
+        struct BoundingBox{
+            float front;
+            float back;
+            float right;
+            float left;
+            float top;
+            float bottom;
+        };
 
     private:
         GLFWwindow* window_;
@@ -42,7 +54,8 @@ class PhysicsSim
         std::shared_ptr<Shader> shader_;
         std::vector<float> vertices_;
         std::vector<unsigned int> indices_;
-        bool bounding_box_ {false};
+        bool has_bounding_box_ {false};
+        BoundingBox bounding_box_{};
         bool sim_started_ {false};
         float time_elapsed_ {};
 

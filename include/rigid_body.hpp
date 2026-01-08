@@ -17,7 +17,7 @@ class RigidBody {
         void set_velocity(const glm::vec3& velocity);
         void set_acceleration(const glm::vec3& acceleration);
         const glm::vec3& pos();
-        const glm::vec3 velocity();
+        const glm::vec3 velocity(); //not reference bc we don't keep track of velocity w/ verlet
         const glm::vec3& acceleration();
         virtual ~RigidBody() = default;
     
